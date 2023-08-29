@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stack>
-#include <vector>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -43,7 +44,7 @@ std::stack<pos_t> valid_positions;
 pos_t load_maze(const char* file_name) {
 	pos_t initial_pos;
 	// Abre o arquivo para leitura (fopen)
-	FILE *pf = fopen("/workspaces/maze_runner/data/maze2.txt", "r");
+	FILE *pf = fopen("/workspaces/maze_runner/data/mazeE.txt", "r");
 	char ch;
 
 	if (pf == NULL) {
@@ -83,6 +84,15 @@ pos_t load_maze(const char* file_name) {
 	}
 	fclose(pf);
 	printf("Initial Position: (%d , %d)\n", initial_pos.i, initial_pos.j);
+
+
+	using namespace std::this_thread;	//Breve tempo para checar inicialização do labirinto
+    using namespace std::chrono; 
+
+	sleep_for(nanoseconds(10));
+    sleep_until(system_clock::now() + seconds(3));
+
+
 	return initial_pos;
 }
 
@@ -102,11 +112,20 @@ void print_maze() {
 bool walk(pos_t pos) {
 	// Repita até que a saída seja encontrada ou não existam mais posições não exploradas
 	// Marcar a posição atual com o símbolo '.'
+	if (maze[pos.i][pos.j] == 's') { // checando se a posisão atual é a saída
+        return true;
+    }
 	maze[pos.i][pos.j] = '.';
 	// Limpa a tela
 	system("clear");
 	// Imprime o labirinto
 	print_maze();
+
+	using namespace std::this_thread; // sleep_for, sleep_until
+    using namespace std::chrono; // nanoseconds, system_clock, seconds
+
+	sleep_for(nanoseconds(10));
+    sleep_until(system_clock::now() + milliseconds(25));	//delay de animação (40 fps)
 	
 	/* Dado a posição atual, verifica quais sao as próximas posições válidas
 		Checar se as posições abaixo são validas (i>0, i<num_rows, j>0, j <num_cols)
@@ -118,35 +137,29 @@ bool walk(pos_t pos) {
 			- pos.i-1, pos.j
 		Caso alguma das posiçÕes validas seja igual a 's', retornar verdadeiro
 	*/
+	
+
 	pos_t pos_add;
 	if(pos.i>0)
-		if(maze[pos.i-1][pos.j] == 'x'){
-			if(maze[pos.i-1][pos.j] == 's')
-				return true;
+		if(maze[pos.i-1][pos.j] == 'x' || maze[pos.i-1][pos.j] == 's'){
 			pos_add.i = pos.i-1;
 			pos_add.j = pos.j;
 			valid_positions.push(pos_add);
 		}
 	if(pos.j>0)
-		if(maze[pos.i][pos.j-1] == 'x'){
-			if(maze[pos.i][pos.j-1] == 's')
-				return true;
+		if(maze[pos.i][pos.j-1] == 'x' || maze[pos.i][pos.j-1] == 's'){
 			pos_add.i = pos.i;
 			pos_add.j = pos.j-1;
 			valid_positions.push(pos_add);
 		}
-	if(pos.i<num_rows)
-		if(maze[pos.i+1][pos.j] == 'x'){
-			if(maze[pos.i+1][pos.j] == 's')
-				return true;
+	if(pos.i<num_rows-1)
+		if(maze[pos.i+1][pos.j] == 'x' || maze[pos.i+1][pos.j] == 's'){
 			pos_add.i = pos.i+1;
 			pos_add.j = pos.j;
 			valid_positions.push(pos_add);
 		}
-	if(pos.j<num_cols)
-		if(maze[pos.i][pos.j+1] == 'x'){
-			if(maze[pos.i][pos.j+1] == 's')
-				return true;
+	if(pos.j<num_cols-1)
+		if(maze[pos.i][pos.j+1] == 'x' || maze[pos.i][pos.j+1] == 's'){
 			pos_add.i = pos.i;
 			pos_add.j = pos.j+1;
 			valid_positions.push(pos_add);
