@@ -44,7 +44,7 @@ std::stack<pos_t> valid_positions;
 pos_t load_maze(const char* file_name) {
 	pos_t initial_pos;
 	// Abre o arquivo para leitura (fopen)
-	FILE *pf = fopen("/workspaces/maze_runner/data/mazeE.txt", "r");
+	FILE *pf = fopen("/workspaces/maze_runner/data/maze2.txt", "r");
 	char ch;
 
 	if (pf == NULL) {
