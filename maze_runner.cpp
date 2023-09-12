@@ -20,7 +20,7 @@ struct pos_t {
 	int j;
 };
 //contador de threads
-int t_counter = 0;
+int t_counter = 1;
 
 //flag de fim do render
 bool render = true;
@@ -52,7 +52,7 @@ std::stack<pos_t> valid_positions;
 pos_t load_maze(const char* file_name) {
 	pos_t initial_pos;
 	// Abre o arquivo para leitura (fopen)
-	FILE *pf = fopen("/workspaces/maze_runner/data/maze3.txt", "r");
+	FILE *pf = fopen("/workspaces/maze_runner/data/maze7.txt", "r");
 	char ch;
 
 	if (pf == NULL) {
@@ -123,16 +123,14 @@ void render_maze() {
 		}
 		printf("\n");
 	}
-	if (render == false)
-		return;
-
+	
 	using namespace std::this_thread; // sleep_for, sleep_until
     using namespace std::chrono; // nanoseconds, system_clock, seconds
 
 	sleep_for(nanoseconds(10));
-    sleep_until(system_clock::now() + milliseconds(25));	//delay de animação (40 fps)
+    sleep_until(system_clock::now() + milliseconds(10));	//delay de animação (100 fps)
 
-	render_maze();
+	return;
 }
 
 
@@ -140,6 +138,13 @@ void render_maze() {
 // Recebe como entrada a posição initial e retorna um booleando indicando se a saída foi encontrada
 void walk(pos_t pos) {
 	// Repita até que a saída seja encontrada ou não existam mais posições não exploradas
+
+	using namespace std::this_thread; // sleep_for, sleep_until
+    using namespace std::chrono; // nanoseconds, system_clock, seconds
+
+	sleep_for(nanoseconds(10));
+    sleep_until(system_clock::now() + milliseconds(25));	//delay de processamento (40 fps)
+
 	// Marcar a posição atual com o símbolo '.'
 	if (maze[pos.i][pos.j] == 's') { // checando se a posisão atual é a saída
 		exit_found = true;
@@ -164,7 +169,11 @@ void walk(pos_t pos) {
 	stack<pos_t> pos_found;
 	pos_t pos_add;
 	int openPos = 0;
+	int collision = 0;	//verifica colisão com outros threads
 	if(pos.i>0)
+	{
+		if(maze[pos.i-1][pos.j] == '.')
+			collision++; 
 		if(maze[pos.i-1][pos.j] == 'x' || maze[pos.i-1][pos.j] == 's'){
 			if(maze[pos.i-1][pos.j] == 's'){
 				exit_found = true;
@@ -175,9 +184,13 @@ void walk(pos_t pos) {
 			pos_found.push(pos_add);
 			openPos++;
 		}
+	}
 	if(pos.j>0)
+	{
+		if(maze[pos.i][pos.j-1] == '.')
+			collision++;
 		if(maze[pos.i][pos.j-1] == 'x' || maze[pos.i][pos.j-1] == 's'){
-			if(maze[pos.i-1][pos.j] == 's'){
+			if(maze[pos.i][pos.j-1] == 's'){
 				exit_found = true;
 				return;
 			}
@@ -186,9 +199,13 @@ void walk(pos_t pos) {
 			pos_found.push(pos_add);
 			openPos++;
 		}
+	}
 	if(pos.i<num_rows-1)
+	{
+		if(maze[pos.i+1][pos.j] == '.')
+			collision++;
 		if(maze[pos.i+1][pos.j] == 'x' || maze[pos.i+1][pos.j] == 's'){
-			if(maze[pos.i-1][pos.j] == 's'){
+			if(maze[pos.i+1][pos.j] == 's'){
 				exit_found = true;
 				return;
 			}
@@ -197,9 +214,13 @@ void walk(pos_t pos) {
 			pos_found.push(pos_add);
 			openPos++;
 		}
+	}
 	if(pos.j<num_cols-1)
+	{
+		if(maze[pos.i][pos.j+1] == '.')
+			collision++;
 		if(maze[pos.i][pos.j+1] == 'x' || maze[pos.i][pos.j+1] == 's'){
-			if(maze[pos.i-1][pos.j] == 's'){
+			if(maze[pos.i][pos.j+1] == 's'){
 				exit_found = true;
 				return;
 			}
@@ -208,10 +229,15 @@ void walk(pos_t pos) {
 			pos_found.push(pos_add);
 			openPos++;
 		}
-
+	}
 	//<threads: com 1 pos aberta: segue ela
 	//2+ pos abertas: segue uma e chria thread das outras
-	if(openPos == 1){
+	if(openPos == 0){
+		if(collision > 1)
+			maze[pos.i][pos.j] = '*';
+		t_counter--;
+	}
+	else if(openPos == 1){
 		pos_t next_position = pos_found.top();
 		pos_found.pop();
 		walk(next_position);
@@ -232,17 +258,17 @@ void walk(pos_t pos) {
 		pos_found.pop();
 		pos_t next_position = pos_found.top();
 		pos_found.pop();
+
 		walk(next_position);
 
 	}
-	else if(openPos == 0){
-		t_counter--;
-	}
+	
 	// Verifica se a pilha de posições nao esta vazia 
 	//Caso não esteja, pegar o primeiro valor de  valid_positions, remove-lo e chamar a funçao walk com esse valor
 	// Caso contrario, retornar falso
 	if(t_counter == 0 || exit_found == true)
 		render = false;
+
 	return;
 }
 
@@ -257,6 +283,7 @@ int main(int argc, char* argv[]) {
 	while(render){
 		render_maze();
 	}
+	render_maze();
 
 	// Tratar o retorno (imprimir mensagem)
 	if(exit_found)
